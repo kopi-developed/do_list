@@ -1,0 +1,40 @@
+# Reads every .md file in the do_list folder, writes app/data.js, then opens the dashboard.
+# This file is intentionally ASCII-only (Windows PowerShell 5.1 reads BOM-less scripts as ANSI).
+param([switch]$NoOpen)
+
+$ErrorActionPreference = 'Stop'
+$app  = Split-Path -Parent $MyInvocation.MyCommand.Path
+$root = Split-Path -Parent $app
+
+$files = [ordered]@{}
+Get-ChildItem -LiteralPath $root -Recurse -Filter *.md -File |
+  Where-Object {
+    -not $_.FullName.StartsWith($app, [StringComparison]::OrdinalIgnoreCase) -and
+    $_.FullName -notmatch '\\\.claude\\'
+  } |
+  Sort-Object FullName |
+  ForEach-Object {
+    $rel = $_.FullName.Substring($root.Length + 1).Replace('\', '/')
+    $files[$rel] = [IO.File]::ReadAllText($_.FullName, [Text.Encoding]::UTF8)
+  }
+
+$data = [ordered]@{
+  generatedAt = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss')
+  root        = (Split-Path -Leaf $root)
+  files       = $files
+}
+$json = $data | ConvertTo-Json -Depth 5 -Compress
+$utf8 = New-Object Text.UTF8Encoding($false)
+[IO.File]::WriteAllText((Join-Path $app 'data.js'), "window.DO_LIST = $json;", $utf8)
+
+if ($NoOpen) { Write-Output "data.js written: $($files.Count) files"; exit 0 }
+
+$html = Join-Path $app 'index.html'
+$uri  = ([Uri]$html).AbsoluteUri
+$edge = @(
+  (Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe'),
+  (Join-Path $env:ProgramFiles 'Microsoft\Edge\Application\msedge.exe')
+) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+
+if ($edge) { Start-Process -FilePath $edge -ArgumentList "--app=$uri" }
+else       { Start-Process -FilePath $html }

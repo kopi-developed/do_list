@@ -1,0 +1,4 @@
+@echo off
+rem Run once: puts a "do_list" shortcut on the desktop.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0app\make-shortcut.ps1"
+pause

@@ -1,0 +1,4 @@
+@echo off
+rem Double-click to open the dashboard. Reads the .md files and opens app\index.html.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0app\build.ps1"
+if errorlevel 1 pause

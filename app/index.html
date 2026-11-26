@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>やりたいことダッシュボード</title>
+<link rel="icon" href="icon.ico">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #ffffff; --soft: #f0efea; --text: #1f1e1b; --sub: #66655f; --muted: #96948c;
+    --line: rgba(0,0,0,.10); --line2: rgba(0,0,0,.22);
+    --hi: #7F77DD; --hi-bg: #EEEDFE; --hi-fg: #3C3489;
+    --lo: #1D9E75; --lo-bg: #E1F5EE; --lo-fg: #085041;
+    --me-bg: #E6F1FB; --me-fg: #0C447C; --cl-bg: #FAEEDA; --cl-fg: #633806;
+    --warn: #BA7517; --warn-bg: #FAEEDA; --warn-fg: #633806;
+    --bad: #C8403F; --bad-bg: #FCEBEB; --bad-fg: #791F1F;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18; --card: #252523; --soft: #2f2f2c; --text: #ecebe6; --sub: #adaca5; --muted: #7d7c76;
+      --line: rgba(255,255,255,.12); --line2: rgba(255,255,255,.26);
+      --hi: #AFA9EC; --hi-bg: #3C3489; --hi-fg: #CECBF6;
+      --lo: #5DCAA5; --lo-bg: #085041; --lo-fg: #9FE1CB;
+      --me-bg: #0C447C; --me-fg: #B5D4F4; --cl-bg: #633806; --cl-fg: #FAC775;
+      --warn: #EF9F27; --warn-bg: #412402; --warn-fg: #FAC775;
+      --bad: #F09595; --bad-bg: #501313; --bad-fg: #F7C1C1;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px;
+         font-family: "Yu Gothic UI", "Meiryo UI", "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 28px 16px 64px; }
+  header.page { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; }
+  .when { color: var(--sub); font-size: 13px; }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; margin: 14px 0 22px; position: sticky; top: 0; background: var(--bg); padding: 8px 0; z-index: 5; border-bottom: 1px solid var(--line); }
+  nav a { font-size: 13px; color: var(--sub); text-decoration: none; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); }
+  nav a:hover { color: var(--text); border-color: var(--line2); }
+  section { margin-bottom: 30px; scroll-margin-top: 56px; }
+  h2 { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
+  .lead { font-size: 13px; color: var(--sub); margin: 0 0 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* 数の並び */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; text-decoration: none; color: inherit; display: block; }
+  a.tile:hover { border-color: var(--line2); }
+  .tile .k { font-size: 12px; color: var(--sub); }
+  .tile .v { font-size: 26px; font-weight: 600; line-height: 1.3; }
+  .tile .v small { font-size: 13px; font-weight: 400; color: var(--muted); }
+  .tile.alert .v { color: var(--warn); }
+
+  /* 今やる */
+  .now { border-top: 4px solid var(--line2); }
+  .now.hi { border-top-color: var(--hi); } .now.lo { border-top-color: var(--lo); }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 4px; flex-wrap: wrap; }
+  .pill { padding: 2px 10px; border-radius: 8px; font-size: 12px; white-space: nowrap; background: var(--soft); color: var(--sub); }
+  .pill.hi { background: var(--hi-bg); color: var(--hi-fg); } .pill.lo { background: var(--lo-bg); color: var(--lo-fg); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn-fg); } .pill.bad { background: var(--bad-bg); color: var(--bad-fg); }
+  h3 { font-size: 17px; font-weight: 600; margin: 4px 0 10px; }
+  .step { background: var(--soft); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+  .label { font-size: 12px; color: var(--sub); display: block; }
+  .row { font-size: 14px; margin: 6px 0; }
+  .meta { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 13px; color: var(--sub); margin-top: 10px; }
+  details { margin-top: 8px; font-size: 13px; color: var(--sub); }
+  summary { cursor: pointer; }
+  .tag { font-size: 11px; padding: 1px 6px; border-radius: 6px; margin-right: 4px; white-space: nowrap; }
+  .tag.me { background: var(--me-bg); color: var(--me-fg); } .tag.cl { background: var(--cl-bg); color: var(--cl-fg); }
+  .tag.est { border: 1px solid var(--line); color: var(--sub); } .tag.open { background: var(--warn-bg); color: var(--warn-fg); }
+  .empty { color: var(--muted); font-size: 14px; }
+
+  /* 箇条書き */
+  ul.plain { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  ul.plain li { padding: 6px 0; border-top: 1px solid var(--line); }
+  ul.plain li:first-child { border-top: 0; padding-top: 0; }
+  ul.plain li.sub { padding-left: 18px; border-top: 0; padding-top: 0; color: var(--sub); }
+  .from { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+  /* 逆算 */
+  .tl { font-size: 13px; }
+  .tl-row { display: grid; grid-template-columns: 220px minmax(0, 1fr) 150px; gap: 12px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+  .tl-row.head { border-top: 0; padding: 0 0 2px; color: var(--muted); font-size: 12px; }
+  .tl-name b { font-weight: 600; font-size: 14px; display: block; line-height: 1.4; }
+  .tl-name small { color: var(--sub); }
+  .tl-track { position: relative; height: 26px; background: var(--soft); border-radius: 6px; overflow: hidden; }
+  .tl-row.head .tl-track { background: none; height: 18px; overflow: visible; }
+  .tick { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--line); }
+  .tick span { position: absolute; top: 0; left: 4px; white-space: nowrap; }
+  .today { position: absolute; top: 0; bottom: 0; border-left: 2px solid var(--text); z-index: 2; }
+  .bar { position: absolute; top: 5px; bottom: 5px; border-radius: 4px; min-width: 3px; }
+  .bar.hi { background: var(--hi); } .bar.lo { background: var(--lo); }
+  .bar.now { opacity: .38; }
+  .bar.bad { outline: 2px solid var(--bad); outline-offset: 1px; }
+  .tl-when { text-align: right; }
+  .tl-when b { font-weight: 600; display: block; }
+  .tl-when.warn b { color: var(--warn); } .tl-when.bad b { color: var(--bad); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--sub); margin-top: 10px; }
+  .legend i { display: inline-block; width: 14px; height: 8px; border-radius: 3px; margin-right: 5px; vertical-align: 1px; }
+  .notice { border-left: 3px solid var(--warn); background: var(--warn-bg); color: var(--warn-fg); padding: 8px 12px; font-size: 13px; margin-top: 10px; }
+  .notice.bad { border-left-color: var(--bad); background: var(--bad-bg); color: var(--bad-fg); }
+  .notice.info { border-left-color: var(--line2); background: var(--soft); color: var(--sub); }
+
+  /* 枠 */
+  .meter { height: 10px; background: var(--soft); border-radius: 5px; overflow: hidden; display: flex; margin: 8px 0 6px; }
+  .meter div { height: 100%; }
+  .big { font-size: 22px; font-weight: 600; }
+  .big small { font-size: 13px; font-weight: 400; color: var(--sub); }
+  table.kv { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  table.kv td { padding: 5px 0; border-top: 1px solid var(--line); vertical-align: top; }
+  table.kv td:last-child { text-align: right; padding-left: 12px; }
+
+  /* いつか */
+  .tablewrap { overflow-x: auto; }
+  table.list { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+  table.list th { text-align: left; font-weight: 600; font-size: 12px; color: var(--sub); padding: 6px 10px; border-bottom: 1px solid var(--line2); white-space: nowrap; }
+  table.list th button { all: unset; cursor: pointer; }
+  table.list th button:hover { color: var(--text); }
+  table.list th button:focus-visible { outline: 2px solid var(--hi); outline-offset: 2px; border-radius: 4px; }
+  table.list td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.list tr.item { cursor: pointer; }
+  table.list tr.item:hover td { background: var(--soft); }
+  table.list tr.detail td { background: var(--soft); font-size: 13px; color: var(--sub); }
+  table.list td.nowrap { white-space: nowrap; }
+
+  /* 対話の記録 */
+  .logdays { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 14px; }
+  .logdays a { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; color: var(--text);
+               text-decoration: none; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; }
+  .logdays a:hover { border-color: var(--line2); }
+  .logdays .mini { height: 6px; background: var(--soft); border-radius: 3px; overflow: hidden; }
+  .logdays .mini i { display: block; height: 100%; background: var(--hi); }
+  .logdays a span:last-child { color: var(--sub); }
+  .logbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .logbar input { font: inherit; font-size: 14px; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line2);
+                  background: var(--card); color: var(--text); flex: 1 1 220px; min-width: 0; }
+  .logbar input:focus-visible { outline: 2px solid var(--hi); outline-offset: 1px; }
+  .logbar .btn { margin: 0; padding: 6px 12px; font-size: 13px; }
+  .logbar .count { font-size: 13px; color: var(--sub); }
+  .logday { margin-bottom: 16px; scroll-margin-top: 56px; }
+  .logday h3 { font-size: 14px; margin: 0 0 6px; display: flex; gap: 8px; align-items: baseline; }
+  .logday h3 small { font-size: 12px; font-weight: 400; color: var(--sub); }
+  details.sess { margin: 0 0 6px; font-size: 14px; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+  details.sess > summary { list-style: none; display: flex; gap: 10px; align-items: baseline; padding: 9px 14px; }
+  details.sess > summary::-webkit-details-marker { display: none; }
+  details.sess > summary::before { content: '▸'; color: var(--muted); display: inline-block; transition: transform .15s; }
+  details.sess[open] > summary::before { transform: rotate(90deg); }
+  details.sess > summary:hover { background: var(--soft); border-radius: 10px; }
+  .sess-n { font-weight: 600; white-space: nowrap; }
+  .sess-gist { color: var(--sub); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sess-c { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .sess-body { padding: 4px 14px 14px 32px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px 20px; }
+  .sess-body .label { margin-bottom: 4px; }
+  @media (max-width: 720px) { .sess-c { display: none; } .sess-body { padding-left: 14px; } }
+
+  .loader { text-align: center; }
+  button.btn { font: inherit; font-size: 14px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--line2); background: var(--card); color: var(--text); cursor: pointer; margin: 4px; }
+  button.btn:hover { background: var(--soft); }
+  .error { color: var(--bad); font-size: 13px; margin-top: 8px; }
+  [hidden] { display: none !important; }
+
+  @media (max-width: 720px) {
+    .tl-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .tl-row.head { display: none; }
+    .tl-when { text-align: left; }
+    .tl-when b { display: inline; margin-right: 6px; }
+  }
+</style>
+<script src="data.js" charset="utf-8" onerror="void 0"></script>
+</head>
+<body>
+<main>
+  <header class="page">
+    <h1>やりたいことダッシュボード</h1>
+    <span class="when" id="when"></span>
+  </header>
+
+  <section class="card loader" id="loader" hidden>
+    <p class="lead">do_list フォルダにある <b>open.bat</b> をダブルクリックすると、フォルダを選ばずに開けます。<br>
+       このまま開く場合は、do_list フォルダを選んでください（読むだけで、ファイルは書き換えません）。</p>
+    <button class="btn" id="pick">フォルダを選ぶ</button>
+    <input type="file" id="dirInput" webkitdirectory hidden>
+    <div class="error" id="error"></div>
+  </section>
+
+  <div id="dash" hidden>
+    <nav aria-label="ページ内の移動">
+      <a href="#s-now">今やる</a><a href="#s-next">次の一歩と未決定</a><a href="#s-plan">期限からの逆算</a>
+      <a href="#s-budget">時間とお金</a><a href="#s-someday">いつか</a><a href="#s-claude">AI案のまま</a><a href="#s-done">終わったこと</a><a href="#s-log">対話の記録</a>
+    </nav>
+
+    <section id="s-tiles"><div class="tiles" id="tiles"></div></section>
+
+    <section id="s-now">
+      <h2>今やる</h2>
+      <p class="lead">同時に2件まで（難易度が高いもの1件＋低いもの1件）。</p>
+      <div class="cols" id="now"></div>
+    </section>
+
+    <section id="s-next">
+      <h2>次の一歩と未決定</h2>
+      <p class="lead" id="logLead"></p>
+      <div class="cols">
+        <div class="card"><span class="label">次の一歩</span><ul class="plain" id="nextSteps"></ul></div>
+        <div class="card"><span class="label">未決定</span><ul class="plain" id="undecided"></ul></div>
+      </div>
+      <div class="card" id="premiseOpenCard" style="margin-top:14px" hidden>
+        <span class="label">前提.md でまだ空いているところ</span><ul class="plain" id="premiseOpen"></ul>
+      </div>
+    </section>
+
+    <section id="s-plan">
+      <h2>期限からの逆算</h2>
+      <p class="lead" id="planLead"></p>
+      <div class="card">
+        <div class="tl" id="timeline"></div>
+        <div class="legend">
+          <span><i style="background:var(--hi)"></i>難易度 高（★3・★4）</span>
+          <span><i style="background:var(--lo)"></i>難易度 低（★1・★2）</span>
+          <span><i style="background:var(--hi);opacity:.38"></i>今やっている項目（期限まで）</span>
+          <span><i style="background:var(--text);width:2px;height:12px;border-radius:0"></i>今日</span>
+        </div>
+        <div id="planNotes"></div>
+      </div>
+    </section>
+
+    <section id="s-budget">
+      <h2>時間とお金</h2>
+      <p class="lead">前提.md の枠に対して、今やる2件がどれだけ使うか。</p>
+      <div class="cols">
+        <div class="card" id="timeBox"></div>
+        <div class="card" id="moneyBox"></div>
+      </div>
+    </section>
+
+    <section id="s-someday">
+      <h2>いつか</h2>
+      <p class="lead">見出しを押すと並べ替え、行を押すと詳しい内容が開きます。</p>
+      <div class="card tablewrap">
+        <table class="list">
+          <thead><tr id="sdHead"></tr></thead>
+          <tbody id="sdBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="s-claude">
+      <h2>AI案のまま残っているもの</h2>
+      <p class="lead">「採用」と言うまで【AI】のままです。対話で1つずつ決めます。</p>
+      <div class="card"><ul class="plain" id="claudeList"></ul></div>
+    </section>
+
+    <section id="s-done">
+      <h2>終わったこと・やめたこと</h2>
+      <div class="cols">
+        <div class="card"><span class="label">終わったこと</span><ul class="plain" id="doneList"></ul></div>
+        <div class="card"><span class="label">保留・やめたこと</span><ul class="plain" id="stopList"></ul></div>
+      </div>
+    </section>
+
+    <section id="s-log">
+      <h2>対話の記録</h2>
+      <p class="lead" id="logAllLead"></p>
+      <div class="logdays" id="logDays"></div>
+      <div class="logbar">
+        <input type="search" id="logQ" placeholder="記録の中を探す（例：前提.md、費用、今やる）" aria-label="記録の中を探す">
+        <span class="count" id="logCount" aria-live="polite"></span>
+        <button class="btn" id="logOpenAll" type="button">すべて開く</button>
+      </div>
+      <div id="logList"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const DAY = 86400000;
+
+/* ================= 共通の小道具 ================= */
+const stripComments = (s) => String(s || '').replace(/<!--[\s\S]*?-->/g, '');
+const plain = (s) => String(s || '').replace(/【[^】]*】/g, '').trim();
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function fmt(s) {
+  return esc(s)
+    .replace(/【自分】/g, '<span class="tag me">自分</span>')
+    .replace(/【(?:AI|Claude)】/g, '<span class="tag cl">AI</span>')
+    .replace(/【(推測|調べた)】/g, '<span class="tag est">$1</span>')
+    .replace(/【◯】/g, '<span class="tag open">未決定</span>');
+}
+const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const diffDays = (a, b) => Math.round((startOfDay(a) - startOfDay(b)) / DAY);
+const ymd = (d) => `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+function parseDate(s) {
+  const m = String(s || '').match(/(\d{4})\s*[-\/年]\s*(\d{1,2})\s*[-\/月]\s*(\d{1,2})/);
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+}
+
+/* ================= md の読み取り ================= */
+function parseItems(md) {
+  const items = [];
+  let section = '', cur = null;
+  for (const raw of stripComments(md).split(/\r?\n/)) {
+    const line = raw.trimEnd();
+    if (line.startsWith('## ')) { section = line.slice(3); cur = null; continue; }
+    if (line.startsWith('### ')) { cur = { section, title: line.slice(4).trim(), f: {} }; items.push(cur); continue; }
+    const m = cur && line.match(/^-\s*([^：]+)：(.*)$/);
+    if (m) cur.f[m[1].trim()] = m[2].trim();
+  }
+  for (const it of items) {
+    const st = (it.f['難易度'] || '').match(/★\s*(\d)/);
+    it.stars = st ? +st[1] : null;
+    it.side = it.section.includes('高') ? 'hi' : it.section.includes('低') ? 'lo'
+            : it.stars == null ? '' : it.stars >= 3 ? 'hi' : 'lo';
+  }
+  return items;
+}
+
+/* 「2〜4週間」「約1か月」などから、最短と最長の日数を取る */
+function parseDuration(s) {
+  const m = plain(s).match(/(?:(\d+(?:\.\d+)?)\s*[〜~～]\s*)?(\d+(?:\.\d+)?)\s*(日|週間|か月|ヶ月|ヵ月|カ月|ケ月)/);
+  if (!m) return null;
+  const unit = m[3] === '日' ? 1 : m[3] === '週間' ? 7 : 30;
+  const hi = +m[2] * unit, lo = m[1] ? +m[1] * unit : hi;
+  return { lo, hi, text: m[0] };
+}
+/* 「週5〜6時間」から週あたりの時間を取る */
+function parseWeekly(s) {
+  const m = plain(s).match(/週\s*(?:(\d+(?:\.\d+)?)\s*[〜~～]\s*)?(\d+(?:\.\d+)?)\s*時間/);
+  return m ? { lo: m[1] ? +m[1] : +m[2], hi: +m[2] } : null;
+}
+/* 「2,000〜3,000円」などの合計。（）の中の条件つきの額は数えない */
+function parseCost(s) {
+  const t = plain(s).replace(/（[^）]*）/g, '');
+  if (!t || /未決定/.test(t)) return null;
+  const re = /(?:(\d[\d,.]*)\s*(万)?\s*[〜~～]\s*)?(\d[\d,.]*)\s*(万)?\s*円/g;
+  let m, lo = 0, hi = 0, n = 0;
+  while ((m = re.exec(t))) {
+    const mul = m[4] ? 10000 : 1;
+    const h = parseFloat(m[3].replace(/,/g, '')) * mul;
+    const l = m[1] ? parseFloat(m[1].replace(/,/g, '')) * ((m[2] || m[4]) ? 10000 : 1) : h;
+    lo += l; hi += h; n++;
+  }
+  return n ? { lo, hi, monthly: /月/.test(t) } : null;
+}
+const yen = (n) => Math.round(n).toLocaleString('ja-JP');
+
+function parsePremise(md) {
+  const t = stripComments(md);
+  const w = t.match(/^-\s*週\s*(?:([0-9.]+)\s*[〜~～]\s*)?([0-9.]+)\s*時間/m);
+  const mo = t.match(/月に使える額：\s*([\d,.]+)\s*(万)?\s*円/);
+  return {
+    weekly: w ? { lo: w[1] ? +w[1] : +w[2], hi: +w[2] } : null,
+    monthly: mo ? parseFloat(mo[1].replace(/,/g, '')) * (mo[2] ? 10000 : 1) : null,
+    open: t.split(/\r?\n/).filter((l) => l.includes('【◯】')).map((l) => l.replace(/^\s*-\s*/, '')),
+  };
+}
+
+/* output/log/ の全ファイルを、「---」で区切った1回ずつの対話に分ける（古い順） */
+function parseLogs(files) {
+  const keys = Object.keys(files).filter((k) => /^output\/log\/\d{4}-\d{2}-\d{2}\.md$/.test(k)).sort();
+  const out = [];
+  for (const key of keys) {
+    const day = key.slice(11, 21);
+    const blocks = stripComments(files[key]).split(/^\s*---\s*$/m).filter((b) => b.trim());
+    blocks.forEach((b, i) => {
+      const title = (b.match(/^#\s+(.+)$/m) || [])[1] || day;
+      const nm = title.match(/(\d+)\s*回目/);
+      const list = [];
+      let cur = null;
+      for (const line of b.split(/\r?\n/)) {
+        if (/^#\s+/.test(line) || !line.trim()) continue;
+        if (/^##\s+/.test(line)) { cur = { name: line.replace(/^##\s+/, '').trim(), rows: [] }; list.push(cur); }
+        else if (cur) cur.rows.push({ sub: /^\s{2,}/.test(line), text: line.replace(/^\s*-\s+/, '').trim() });
+      }
+      const secs = {};
+      for (const s of list) secs[s.name] = (secs[s.name] || []).concat(s.rows);
+      out.push({ key, day, date: parseDate(day), title, n: nm ? +nm[1] : i + 1, list, secs, text: b.toLowerCase() });
+    });
+  }
+  return out;
+}
+
+function countInbox(md) {
+  return stripComments(md).split(/\r?\n/).filter((l) => l.trim() && !l.trim().startsWith('#')).length;
+}
+
+/* ================= 期限と逆算 ================= */
+function deadlineOf(it, ctx) {
+  const s = it.f['期限'] || '';
+  const d = parseDate(s);
+  if (d) return { date: d, label: ymd(d) };
+  return null;
+}
+
+/* 同じ側（高／低）は1件ずつしか進められないので、期限から順に後ろへ詰めて並べる */
+function buildSchedule(ctx) {
+  const rows = [], notes = [];
+  for (const side of ['hi', 'lo']) {
+    const sideName = side === 'hi' ? '高い側' : '低い側';
+    const cur = ctx.now.find((i) => i.side === side);
+    const curDl = cur ? deadlineOf(cur, ctx) : null;
+    const list = ctx.someday.filter((i) => i.side === side)
+      .map((it) => ({ it, side, dl: deadlineOf(it, ctx), dur: parseDuration(it.f['時間']) }))
+      .filter((x) => x.dl && x.dur)
+      .sort((a, b) => b.dl.date - a.dl.date || b.dur.hi - a.dur.hi);
+    let cursor = null;
+    for (const x of list) {
+      x.end = cursor && cursor < x.dl.date ? cursor : x.dl.date;
+      x.start = addDays(x.end, -x.dur.hi);
+      cursor = x.start;
+      x.late = x.start < ctx.today;
+      x.blocked = !!(curDl && x.start < curDl.date);
+      x.left = diffDays(x.start, ctx.today);
+      rows.push(x);
+    }
+    const late = list.filter((x) => x.late);
+    const blocked = list.filter((x) => x.blocked && !x.late);
+    if (late.length) notes.push({ cls: 'bad', text: `${sideName}：${late.map((x) => `「${x.it.title}」`).join('')}は、最長の見積もりで計算すると、今日始めても期限に間に合いません。` });
+    if (blocked.length) notes.push({ cls: '', text: `${sideName}の枠は「${cur.title}」が ${curDl.label} まで使う予定です。${blocked.map((x) => `「${x.it.title}」`).join('')}の開始の目安と重なっています。` });
+    if (list.length > 1) notes.push({ cls: 'info', text: `${sideName}は期限つきの項目が${list.length}件あります。同時に1件のルールに合わせて、順に並べています。` });
+  }
+  rows.sort((a, b) => a.start - b.start);
+  return { rows, notes };
+}
+
+/* ================= 画面を作る ================= */
+function render(files, info) {
+  const today = startOfDay(new Date());
+  const now = parseItems(files['output/今やる.md'] || '');
+  const someday = parseItems(files['draft/やりたいこと.md'] || '');
+  const done = parseItems(files['archive/終わったこと.md'] || '');
+  const stopped = parseItems(files['archive/やめたこと.md'] || '');
+  const premise = parsePremise(files['reference/前提.md'] || '');
+  const logs = parseLogs(files);
+  const log = logs[logs.length - 1] || null;
+  const logDays = new Set(logs.map((s) => s.day)).size;
+  const inbox = countInbox(files['inbox/思いつき.md'] || '');
+  const ctx = { today, now, someday };
+
+  /* 見出し */
+  const mon = addDays(today, -((today.getDay() + 6) % 7)), sun = addDays(mon, 6);
+  $('when').textContent = `今週 ${mon.getMonth() + 1}/${mon.getDate()}〜${sun.getMonth() + 1}/${sun.getDate()}　｜　${info}`;
+
+  /* AI案のまま */
+  const pending = [...now.map((i) => [i, '今やる']), ...someday.map((i) => [i, 'いつか'])]
+    .map(([it, where]) => ({ it, where, keys: Object.keys(it.f).filter((k) => /【(?:AI|Claude)】/.test(it.f[k])) }))
+    .filter((x) => x.keys.length);
+  const pendingCount = pending.reduce((n, x) => n + x.keys.length, 0);
+
+  /* 数 */
+  const tiles = [
+    { k: '今やる', v: `${now.length}<small> / 2件</small>`, href: '#s-now', alert: now.length > 2 },
+    { k: 'いつか', v: `${someday.length}<small> 件</small>`, href: '#s-someday' },
+    { k: '完了', v: `${done.length}<small> 件</small>`, href: '#s-done' },
+    { k: '保留・やめた', v: `${stopped.length}<small> 件</small>`, href: '#s-done' },
+    { k: 'AI案のまま', v: `${pendingCount}<small> か所</small>`, href: '#s-claude', alert: pendingCount > 0 },
+    { k: 'inbox の思いつき', v: `${inbox}<small> 行</small>`, alert: inbox > 0 },
+    { k: '対話の記録', v: `${logs.length}<small> 回 / ${logDays}日</small>`, href: '#s-log' },
+  ];
+  $('tiles').innerHTML = tiles.map((t) =>
+    `<${t.href ? `a href="${t.href}"` : 'div'} class="tile${t.alert ? ' alert' : ''}"><div class="k">${t.k}</div><div class="v num">${t.v}</div></${t.href ? 'a' : 'div'}>`).join('');
+
+  /* 今やる */
+  $('now').innerHTML = now.length ? now.map((it) => {
+    const f = it.f, dl = deadlineOf(it, ctx), added = parseDate(f['追加日']);
+    const left = dl ? diffDays(dl.date, today) : null;
+    const leftCls = left == null ? '' : left < 0 ? 'bad' : left <= 30 ? 'warn' : '';
+    return `<article class="card now ${it.side}">
+      <div class="top">
+        <span class="pill ${it.side}">${it.side === 'hi' ? '難易度 高' : it.side === 'lo' ? '難易度 低' : esc(it.section)} ${esc(f['難易度'] || '')}</span>
+        <span>${dl ? `<span class="pill ${leftCls} num">${left < 0 ? `期限を${-left}日過ぎています` : `期限まであと${left}日`}</span>` : '<span class="pill">期限なし</span>'}
+              ${added ? `<span class="pill num">追加から${Math.max(0, diffDays(today, added))}日</span>` : ''}</span>
+      </div>
+      <h3>${esc(it.title)}</h3>
+      <div class="step"><span class="label">今週の一歩</span>${fmt(f['最初の一歩'] || '未決定')}</div>
+      <div class="row"><span class="label">完了条件</span>${fmt(f['完了条件'] || '未決定')}</div>
+      <div class="meta"><span>期限：${esc(f['期限'] || 'なし')}</span><span>時間：${fmt(f['時間'] || '未決定')}</span><span>費用：${fmt(f['費用'] || '未決定')}</span></div>
+      ${f['理由'] || f['メモ'] ? `<details><summary>理由・メモ</summary>
+        ${f['理由'] ? `<div class="row">理由：${fmt(f['理由'])}</div>` : ''}${f['メモ'] ? `<div class="row">メモ：${fmt(f['メモ'])}</div>` : ''}</details>` : ''}
+    </article>`;
+  }).join('') : '<p class="empty">今やる項目はありません。</p>';
+
+  /* 次の一歩と未決定 */
+  $('logLead').textContent = log ? `いちばん新しい記録（${log.key} の「${log.title}」）から抜き出しています。` : '記録（output/log/）がまだありません。';
+  $('nextSteps').innerHTML = li(log && log.secs['次の一歩']);
+  $('undecided').innerHTML = li(log && log.secs['未決定']);
+  $('premiseOpenCard').hidden = !premise.open.length;
+  $('premiseOpen').innerHTML = premise.open.map((l) => `<li>${fmt(l)}</li>`).join('');
+
+  /* 逆算 */
+  renderPlan(ctx);
+
+  /* 時間とお金 */
+  renderBudget(ctx, premise);
+
+  /* いつか */
+  renderSomeday(ctx);
+
+  /* AI案のまま */
+  $('claudeList').innerHTML = pending.length ? pending.map((x) =>
+    `<li><b>${esc(x.it.title)}</b> <span class="pill">${x.where}</span><br><span style="color:var(--sub);font-size:13px">${x.keys.map(esc).join('・')}</span></li>`).join('')
+    : '<li class="empty">ありません。すべて【自分】で決まっています。</li>';
+
+  /* 終わったこと・やめたこと */
+  const val = (s) => !s || /^未記入/.test(s) ? '<span class="tag open">未記入</span>' : fmt(s);
+  $('doneList').innerHTML = done.length ? done.map((it) =>
+    `<li><b>${esc(it.title)}</b><br><span class="label">完了日</span>${fmt(it.f['完了日'] || '')}
+     <span class="label" style="margin-top:4px">身についたこと</span>${val(it.f['身についたこと'])}</li>`).join('') : '<li class="empty">まだありません。</li>';
+  $('stopList').innerHTML = stopped.length ? stopped.map((it) =>
+    `<li><b>${esc(it.title)}</b> <span class="pill">${esc(it.f['状態'] || '')}</span><br><span class="label">理由</span>${fmt(it.f['理由'] || '')}
+     ${it.f['再開の条件'] ? `<span class="label" style="margin-top:4px">再開の条件</span>${fmt(it.f['再開の条件'])}` : ''}</li>`).join('') : '<li class="empty">ありません。</li>';
+
+  /* 対話の記録 */
+  renderLogs(logs);
+
+  $('loader').hidden = true;
+  $('dash').hidden = false;
+}
+
+const li = (rows) => rows && rows.length ? rows.map((r) => `<li class="${r.sub ? 'sub' : ''}">${fmt(r.text)}</li>`).join('') : '<li class="empty">なし</li>';
+
+function renderLogs(logs) {
+  const WD = '日月火水木金土';
+  const dlabel = (d) => d ? `${d.getMonth() + 1}/${d.getDate()}（${WD[d.getDay()]}）` : '';
+  const days = [];
+  logs.forEach((s, i) => {
+    let d = days[days.length - 1];
+    if (!d || d.day !== s.day) days.push(d = { day: s.day, date: s.date, list: [] });
+    d.list.push(i);
+  });
+  days.reverse().forEach((d) => d.list.reverse());
+  const latest = logs.length - 1;
+  const maxN = Math.max(1, ...days.map((d) => d.list.length));
+
+  $('logAllLead').textContent = logs.length
+    ? `output/log/ にある ${days.length}日分・${logs.length}回の対話を、新しい順に並べています。行を押すと中身が開きます。`
+    : '記録（output/log/）がまだありません。';
+  $('logDays').innerHTML = days.map((d) =>
+    `<a href="#log-${d.day}"><span class="num">${dlabel(d.date)}</span><span class="mini"><i style="width:${(d.list.length / maxN) * 100}%"></i></span><span class="num">${d.list.length}回</span></a>`).join('');
+
+  const real = (rows) => (rows || []).filter((r) => !r.sub && !/^なし/.test(plain(r.text)));
+  const gistOf = (s) => {
+    const r = real(s.secs['決まったこと'])[0] || real(s.secs['話したこと'])[0] || s.list.flatMap((x) => x.rows)[0];
+    return r ? plain(r.text) : '';
+  };
+  $('logList').innerHTML = days.map((d) => `<div class="logday" id="log-${d.day}">
+      <h3><span class="num">${d.day.replace(/-/g, '/')}</span>${dlabel(d.date).replace(/^[^（]*/, '')}<small>${d.list.length}回</small></h3>
+      ${d.list.map((i) => {
+        const s = logs[i];
+        return `<details class="sess" data-i="${i}"${i === latest ? ' open' : ''}>
+          <summary><span class="sess-n">${s.n}回目</span><span class="sess-gist">${esc(gistOf(s))}</span>
+            <span class="sess-c num">決まった ${real(s.secs['決まったこと']).length}・未決定 ${real(s.secs['未決定']).length}</span></summary>
+          <div class="sess-body">${s.list.map((sec) => `<div><span class="label">${esc(sec.name)}</span><ul class="plain">${li(sec.rows)}</ul></div>`).join('')}</div>
+        </details>`;
+      }).join('')}
+    </div>`).join('');
+
+  const all = () => [...document.querySelectorAll('#logList details.sess')];
+  const syncBtn = () => {
+    const vis = all().filter((el) => !el.hidden);
+    $('logOpenAll').textContent = vis.length && vis.every((el) => el.open) ? 'すべて閉じる' : 'すべて開く';
+  };
+  $('logQ').oninput = () => {
+    const q = $('logQ').value.trim().toLowerCase();
+    let hit = 0;
+    for (const el of all()) {
+      const ok = !q || logs[+el.dataset.i].text.includes(q);
+      el.hidden = !ok;
+      el.open = q ? ok : +el.dataset.i === latest;
+      if (ok) hit++;
+    }
+    for (const d of document.querySelectorAll('#logList .logday')) d.hidden = !d.querySelector('details.sess:not([hidden])');
+    $('logCount').textContent = q ? (hit ? `${hit}回の対話に見つかりました` : '見つかりませんでした') : '';
+    syncBtn();
+  };
+  $('logOpenAll').onclick = () => {
+    const vis = all().filter((el) => !el.hidden);
+    const open = !vis.every((el) => el.open);
+    vis.forEach((el) => { el.open = open; });
+    syncBtn();
+  };
+  if (!$('logList').dataset.bound) { $('logList').dataset.bound = '1'; $('logList').addEventListener('toggle', syncBtn, true); }
+}
+
+function renderPlan(ctx) {
+  const { rows, notes } = buildSchedule(ctx);
+  const cur = ctx.now.map((it) => ({ it, dl: deadlineOf(it, ctx) })).filter((x) => x.dl && x.dl.date >= ctx.today);
+  $('planLead').innerHTML = `期限（YYYY-MM-DD）のある「いつか」の項目を、いちばん長い見積もりで計算し、遅くともいつ始めるかを出しています。`;
+  if (!rows.length && !cur.length) { $('timeline').innerHTML = '<p class="empty">期限のある項目がありません。</p>'; $('planNotes').innerHTML = ''; return; }
+
+  const t0 = new Date(ctx.today.getFullYear(), ctx.today.getMonth(), 1);
+  const ends = [...rows.map((r) => r.dl.date), ...cur.map((c) => c.dl.date), addDays(ctx.today, 90)];
+  const starts = [t0, ...rows.map((r) => new Date(r.start.getFullYear(), r.start.getMonth(), 1))];
+  const tMin = new Date(Math.min(...starts)), tMax = addDays(new Date(Math.max(...ends)), 10);
+  const pct = (d) => Math.max(0, Math.min(100, ((d - tMin) / (tMax - tMin)) * 100));
+  const months = [];
+  for (let m = new Date(tMin.getFullYear(), tMin.getMonth(), 1); m < tMax; m = new Date(m.getFullYear(), m.getMonth() + 1, 1)) months.push(m);
+  const every = months.length > 10 ? 2 : 1;
+  const ticks = (label) => months.map((m, i) => `<div class="tick" style="left:${pct(m)}%">${label && i % every === 0 ? `<span>${m.getMonth() === 0 || i === 0 ? m.getFullYear() + '年' : ''}${m.getMonth() + 1}月</span>` : ''}</div>`).join('');
+  const todayLine = `<div class="today" style="left:${pct(ctx.today)}%"></div>`;
+  const bar = (a, b, cls) => `<div class="bar ${cls}" style="left:${pct(a)}%;width:${Math.max(0.6, pct(b) - pct(a))}%"></div>`;
+
+  let html = `<div class="tl-row head"><div>項目</div><div class="tl-track">${ticks(true)}</div><div class="tl-when">開始の目安</div></div>`;
+  for (const c of cur) {
+    html += `<div class="tl-row"><div class="tl-name"><b>${esc(c.it.title)}</b><small>今やる・${esc(c.it.f['難易度'] || '')}</small></div>
+      <div class="tl-track">${ticks(false)}${bar(ctx.today, c.dl.date, `${c.it.side} now`)}${todayLine}</div>
+      <div class="tl-when"><b>進行中</b><span class="num">${c.dl.label} まで</span></div></div>`;
+  }
+  for (const r of rows) {
+    const cls = r.late ? 'bad' : (r.blocked || r.left <= 30) ? 'warn' : '';
+    const when = r.late ? `${-r.left}日前に過ぎています` : r.left === 0 ? '今日' : `あと${r.left}日`;
+    html += `<div class="tl-row"><div class="tl-name"><b>${esc(r.it.title)}</b><small>${esc(r.it.f['難易度'] || '')}・最長${r.dur.hi}日（${esc(r.dur.text)}）・期限 ${r.dl.label}</small></div>
+      <div class="tl-track">${ticks(false)}${bar(r.start, r.end, `${r.side}${r.late ? ' bad' : ''}`)}${todayLine}</div>
+      <div class="tl-when ${cls}"><b class="num">${ymd(r.start)} までに開始</b><span class="num">${when}</span></div></div>`;
+  }
+  $('timeline').innerHTML = html;
+  $('planNotes').innerHTML = notes.map((n) => `<div class="notice ${n.cls}">${esc(n.text)}</div>`).join('');
+}
+
+function renderBudget(ctx, premise) {
+  /* 時間 */
+  const per = ctx.now.map((it) => ({ it, w: parseWeekly(it.f['時間']) }));
+  const known = per.filter((p) => p.w);
+  const lo = known.reduce((n, p) => n + p.w.lo, 0), hi = known.reduce((n, p) => n + p.w.hi, 0);
+  const unknown = per.length - known.length;
+  const range = (a, b) => a === b ? `${a}` : `${a}〜${b}`;
+  let t = `<span class="label">週の時間</span>`;
+  if (premise.weekly) {
+    const cap = premise.weekly.hi;
+    t += `<div class="big num">${range(lo, hi)}<small> / 週 ${range(premise.weekly.lo, premise.weekly.hi)} 時間</small></div>
+      <div class="meter" role="img" aria-label="週 ${cap} 時間のうち ${range(lo, hi)} 時間を使用">
+        ${known.map((p) => `<div style="width:${Math.min(100, (p.w.hi / cap) * 100)}%;background:var(--${p.it.side || 'hi'})"></div>`).join('')}</div>
+      ${hi > cap ? `<div class="notice bad">今やる項目の時間が、週の枠を超えています。</div>` : ''}`;
+  } else {
+    t += `<div class="big num">${known.length ? range(lo, hi) : '—'}<small> 時間 / 週の枠は <span class="tag open">未決定</span></small></div>`;
+  }
+  t += `<table class="kv">${per.map((p) => `<tr><td>${esc(p.it.title)}</td><td class="num">${p.w ? `週 ${range(p.w.lo, p.w.hi)} 時間` : '週あたりは未決定'}</td></tr>`).join('')}</table>`;
+  if (unknown) t += `<div class="from">週あたりの時間が書かれていない項目が ${unknown} 件あります（時間の欄に「週◯時間」と書くと数えます）。</div>`;
+  $('timeBox').innerHTML = t;
+
+  /* お金 */
+  const all = [...ctx.now, ...ctx.someday].map((it) => ({ it, c: parseCost(it.f['費用']) }));
+  const once = all.filter((x) => x.c && !x.c.monthly), monthly = all.filter((x) => x.c && x.c.monthly), none = all.filter((x) => !x.c);
+  const sum = (arr, k) => arr.reduce((n, x) => n + x.c[k], 0);
+  let m = `<span class="label">月に使えるお金</span>
+    <div class="big num">${premise.monthly != null ? `${yen(premise.monthly)}<small> 円 / 月</small>` : `—<small> 月の枠は <span class="tag open">未決定</span></small>`}</div>
+    <table class="kv">
+      ${ctx.now.map((it) => `<tr><td>${esc(it.title)}</td><td>${fmt(it.f['費用'] || '未決定')}</td></tr>`).join('')}
+      <tr><td>今やる＋いつかを全部やった場合（1回きりの費用）</td><td class="num">${once.length ? `${yen(sum(once, 'lo'))}〜${yen(sum(once, 'hi'))} 円` : '—'}</td></tr>
+      <tr><td>毎月かかる項目</td><td class="num">${monthly.length} 件${monthly.length ? `（月 〜${yen(sum(monthly, 'hi'))} 円）` : ''}</td></tr>
+    </table>
+    <div class="from">合計は、費用の欄から数字を拾った概算です（ほとんどが【推測】。カッコ内の条件つきの額は含めていません${none.length ? `。費用が未決定の項目 ${none.length} 件は含めていません` : ''}）。</div>`;
+  $('moneyBox').innerHTML = m;
+}
+
+const sortState = { key: 'deadline', dir: 1 };
+function renderSomeday(ctx) {
+  const cols = [
+    { key: 'title', label: '項目' }, { key: 'stars', label: '難易度' }, { key: 'deadline', label: '期限' },
+    { key: 'dur', label: '時間' }, { key: 'cost', label: '費用' }, { key: 'reason', label: '理由' },
+  ];
+  const rows = ctx.someday.map((it) => {
+    const dl = deadlineOf(it, ctx), dur = parseDuration(it.f['時間']), cost = parseCost(it.f['費用']);
+    return { it, dl, title: it.title, stars: it.stars ?? 99, deadline: dl ? +dl.date : Infinity, dur: dur ? dur.hi : Infinity,
+             cost: cost ? cost.hi : Infinity, reason: plain(it.f['理由']).split(/[―—\-]/)[0].trim() };
+  });
+  const draw = () => {
+    const { key, dir } = sortState;
+    rows.sort((a, b) => (typeof a[key] === 'string' ? a[key].localeCompare(b[key], 'ja') : a[key] - b[key]) * dir);
+    $('sdHead').innerHTML = cols.map((c) => `<th aria-sort="${c.key === key ? (dir > 0 ? 'ascending' : 'descending') : 'none'}"><button data-k="${c.key}">${c.label}${c.key === key ? (dir > 0 ? ' ▲' : ' ▼') : ''}</button></th>`).join('');
+    $('sdBody').innerHTML = rows.length ? rows.map((r, i) => {
+      const f = r.it.f;
+      return `<tr class="item" data-i="${i}" tabindex="0" aria-expanded="false">
+        <td><b>${esc(r.title)}</b></td>
+        <td class="nowrap"><span class="pill ${r.it.side}">${esc(f['難易度'] || '—')}</span></td>
+        <td class="nowrap num">${r.dl ? esc(r.dl.label) : 'なし'}</td>
+        <td>${fmt(f['時間'] || '未決定')}</td><td>${fmt(f['費用'] || '未決定')}</td><td class="nowrap">${esc(r.reason || '—')}</td></tr>
+      <tr class="detail" hidden><td colspan="6">
+        <div class="row"><span class="label">完了条件</span>${fmt(f['完了条件'] || '未決定')}</div>
+        <div class="row"><span class="label">最初の一歩</span>${fmt(f['最初の一歩'] || '未決定')}</div>
+        ${f['始める条件'] ? `<div class="row"><span class="label">始める条件</span>${fmt(f['始める条件'])}</div>` : ''}
+        ${f['理由'] ? `<div class="row"><span class="label">理由</span>${fmt(f['理由'])}</div>` : ''}
+        ${f['メモ'] ? `<div class="row"><span class="label">メモ</span>${fmt(f['メモ'])}</div>` : ''}</td></tr>`;
+    }).join('') : '<tr><td colspan="6" class="empty">いつかの項目はありません。</td></tr>';
+  };
+  $('sdHead').onclick = (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (sortState.key === b.dataset.k) sortState.dir *= -1; else { sortState.key = b.dataset.k; sortState.dir = 1; }
+    draw();
+  };
+  const toggle = (tr) => { const d = tr.nextElementSibling; d.hidden = !d.hidden; tr.setAttribute('aria-expanded', String(!d.hidden)); };
+  $('sdBody').onclick = (e) => { const tr = e.target.closest('tr.item'); if (tr) toggle(tr); };
+  $('sdBody').onkeydown = (e) => { const tr = e.target.closest('tr.item'); if (tr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggle(tr); } };
+  draw();
+}
+
+/* ================= 読み込み ================= */
+const stamp = (d) => `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+async function readDir(dir, prefix, out) {
+  for await (const [name, h] of dir.entries()) {
+    if (h.kind === 'directory') { if (name !== 'app' && !name.startsWith('.')) await readDir(h, prefix + name + '/', out); }
+    else if (name.endsWith('.md')) out[prefix + name] = await (await h.getFile()).text();
+  }
+  return out;
+}
+function loaded(files) {
+  if (!files['output/今やる.md']) { $('error').textContent = 'output/今やる.md が見つかりませんでした。do_list フォルダそのものを選んでください。'; return; }
+  render(files, `${stamp(new Date())} に読み込み`);
+}
+$('pick').onclick = async () => {
+  $('error').textContent = '';
+  if (!window.showDirectoryPicker) return $('dirInput').click();
+  try { loaded(await readDir(await showDirectoryPicker({ id: 'do_list', mode: 'read' }), '', {})); } catch (e) { /* キャンセル */ }
+};
+$('dirInput').onchange = async (e) => {
+  const files = {};
+  for (const f of e.target.files) {
+    const rel = f.webkitRelativePath.split('/').slice(1).join('/');
+    if (rel.endsWith('.md') && !rel.startsWith('app/') && !rel.startsWith('.')) files[rel] = await f.text();
+  }
+  loaded(files);
+};
+
+if (window.DO_LIST && window.DO_LIST.files) {
+  render(window.DO_LIST.files, `${stamp(new Date(window.DO_LIST.generatedAt))} 時点のファイル（開き直すと最新になります）`);
+} else {
+  $('loader').hidden = false;
+}
+</script>
+</body>
+</html>
